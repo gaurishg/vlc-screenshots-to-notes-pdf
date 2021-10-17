@@ -39,7 +39,7 @@ def get_list_of_all_snapshots():
 
 print(get_list_of_all_snapshots())
 # Get first video name
-video_name_with_extension = glob.glob(f"*{vid_extension_with_dot}")
+video_name_with_extension = sorted(glob.glob(f"*{vid_extension_with_dot}"))
 # If there is no video with this extension
 if not video_name_with_extension:
 # close the program

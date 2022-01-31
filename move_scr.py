@@ -13,7 +13,8 @@ import glob
 4. make a folder with the video name excluding extension
 5. cd into the folder
 6. move all screenshots to this folder
-7. move video here too"""
+7. move video here too
+"""
 
 
 # Base directory where screenshots are saved

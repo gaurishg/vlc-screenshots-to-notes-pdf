@@ -34,11 +34,12 @@ class DirectoryObject:
         list_of_folders: List["DirectoryObject"]=None, 
         list_of_files: List["DirectoryObject"]=None
     ) -> None:
-        self._name = name
+        self._name = os.path.basename(name)
         self._is_file_or_folder = is_file_or_folder
         self._folders = list_of_folders or []
         self._files = list_of_files or []
-    
+        self._folders.sort()
+        self._files.sort()
 
     def name(self) -> str:
         return self._name
@@ -123,7 +124,7 @@ class DirectoryObject:
             yield f
 
     def __str__(self) -> str:
-        def get_string(folder: DirectoryObject, indent_level: int=0, dir_prefix="", file_prefix="") -> str:
+        def get_string(folder: DirectoryObject, indent_level: int=0, dir_prefix="(dir)", file_prefix="(file)") -> str:
             string = ""
             for subfolder in folder.get_folders():
                 string += "\t" * indent_level + f"{dir_prefix}{subfolder.name()}\n"
@@ -150,6 +151,8 @@ def create_directory_tree(folder: str=None, level: int=-1, filter_func=lambda x:
     
     for _, folders, files in os.walk(folder):
         folders = [os.path.join(_, f) for f in folders if filter_func(f)]
+        folders.sort()
+        files.sort()
         break
 
 

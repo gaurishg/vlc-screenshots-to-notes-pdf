@@ -3,3 +3,4 @@ Done
 .vscode
 *.pyc
 __pycache__
+*.pdf

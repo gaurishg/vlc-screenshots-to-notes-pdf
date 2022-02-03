@@ -77,7 +77,7 @@ class DirectoryObject:
             self._files += [f for f in files if f.is_file()]
 
     
-    def get_number_of_files(self, level: int=-1) -> int:
+    def get_number_of_files(self, level: int=-1, file_extension: str | list[str]=None) -> int:
         """
             Get number of files inside the folder
             @level: int 
@@ -88,13 +88,25 @@ class DirectoryObject:
             returns 1 if the object upon which this function is being called at is 
             a file
         """
+
+        # If file_extension is there and it is a single file extension,
+        # convert it to a list
+        if file_extension:
+            if isinstance(file_extension, str):
+                file_extension = [file_extension]
+        
         if self.is_file():
+            if file_extension:
+                if any([self._name.lower().endswith(ext.lower()) for ext in file_extension]):
+                    return 1
+                else:
+                    return 0
             return 1
         
         if level == 0:
-            return len(self._files)
+            return len([f for f in self._files if any([f.name().lower().endswith(ext.lower()) for ext in file_extension])])
         
-        return len(self._files) + sum([f.get_number_of_files(level=level-1) for f in self._folders])
+        return sum([f.get_number_of_files(level=level-1, file_extension=file_extension) for f in self._folders + self._files])
     
 
     def get_number_of_folders(self, level: int=-1) -> int:
@@ -139,8 +151,11 @@ class DirectoryObject:
     def __repr__(self) -> str:
         return f"""DirectoryObject({"(file)" if self.is_file() else "(dir)"}{self._name})"""
     
+    def __lt__(self, other: "DirectoryObject") -> bool:
+        return os.path.basename(self._name) < os.path.basename(other._name)
+    
 
-def create_directory_tree(folder: str=None, level: int=-1, filter_func=lambda x: True) -> DirectoryObject:
+def create_directory_tree(folder: str=None, level: int=-1, allow_folder_function=lambda x: True) -> DirectoryObject:
     if folder is None:
         folder = os.curdir
     
@@ -150,7 +165,7 @@ def create_directory_tree(folder: str=None, level: int=-1, filter_func=lambda x:
         raise ValueError("Argument should be a valid directory")
     
     for _, folders, files in os.walk(folder):
-        folders = [os.path.join(_, f) for f in folders if filter_func(f)]
+        folders = [os.path.join(_, f) for f in folders if allow_folder_function(f)]
         folders.sort()
         files.sort()
         break
@@ -172,9 +187,9 @@ def create_directory_tree(folder: str=None, level: int=-1, filter_func=lambda x:
     
     return DirectoryObject(folder, FileOrFolder.FOLDER, folder_list, files_list)
 
-def _filter_func(x: str) -> bool:
+def _allow_folder_func(x: str) -> bool:
     return not x.startswith(".")
 
 
 if __name__ == '__main__':
-    print(create_directory_tree(".", level=1))#, filter_func=_filter_func))
+    print(create_directory_tree(".", level=1))#, allow_folder_function=_allow_folder_func))

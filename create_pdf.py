@@ -11,6 +11,7 @@ FONT_WIDTH = 10
 IMAGE_EXTENSIONS = [".jpg"]
 TEXT_POS = (0, 0)
 TEMP_FOLDER = os.path.join(BASE_DIR_PATH, "temp")
+PYTHON_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
 def add_one(counter_list: list[list[int, int]]):
     """
@@ -20,7 +21,7 @@ def add_one(counter_list: list[list[int, int]]):
         counter_list[index][0] += 1
 
 
-def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileWriter, image_exts: list[str] = None, list_of_sizes: list[list[int, int]] = None, parent_dir: str = None, parent_bookmark: Bookmark=None, make_pdf:bool = True, start_page_number: int=0) -> None:
+def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileWriter, image_exts: list[str] = None, list_of_sizes: list[list[int, int]] = None, parent_dir: str = None, parent_bookmark: Bookmark=None, make_pdf:bool = True, start_page_number: int=0) -> int:
     """
         Modifies all images in place and adds the text regarding page numbers
         make_pdf = True if you want to make pdf and False if pdf is already there and you just wanted to add bookmarks to it
@@ -35,37 +36,37 @@ def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileW
         list_of_sizes = []
     
     if dir_object.is_file():
-        return
+        return 0
 
     if not make_pdf:
         parent_bookmark = pdf_writer.addBookmark(title=dir_object.name(), pagenum=start_page_number, parent=parent_bookmark)
 
     CUR_DIR_PATH = os.path.join(parent_dir, dir_object.name())
     
-    total_number_of_files = dir_object.get_number_of_files(file_extension=image_exts)
-    list_of_sizes.append([0, total_number_of_files])
+    total_number_of_photos = dir_object.get_number_of_files(file_extension=image_exts)
+    list_of_sizes.append([0, total_number_of_photos])
 
-    number_of_files_in_this_folder = dir_object.get_number_of_files(level=0, file_extension=image_exts)
-    list_of_sizes.append([0, number_of_files_in_this_folder])
+    number_of_photos_in_this_folder = dir_object.get_number_of_files(level=0, file_extension=image_exts)
+    list_of_sizes.append([0, number_of_photos_in_this_folder])
 
-    images_in_this_folder = [im for im in dir_object.get_files() if any([im.name().lower().endswith(ext.lower()) for ext in image_exts])]
-    if images_in_this_folder:
+    image_objects_in_this_folder = [im for im in dir_object.get_files() if any([im.name().lower().endswith(ext.lower()) for ext in image_exts])]
+    if image_objects_in_this_folder:
         # Line below should have worked but it was throwing error
         # images_in_this_folder = [Image.open(os.path.join(CUR_DIR_PATH, im.name()) for im in images_in_this_folder)]
         if make_pdf:
-            for index in range(len(images_in_this_folder)):
-                im = images_in_this_folder[index]
+            for index in range(len(image_objects_in_this_folder)):
+                im = image_objects_in_this_folder[index]
                 img_path = os.path.join(CUR_DIR_PATH, im.name())
-                images_in_this_folder[index] = Image.open(img_path)
+                image_objects_in_this_folder[index] = Image.open(img_path)
             
-            image_draws_in_this_folder = [ImageDraw.Draw(im) for im in images_in_this_folder]
+            image_draws_in_this_folder = [ImageDraw.Draw(im) for im in image_objects_in_this_folder]
 
-            for image, imagedraw in zip(images_in_this_folder, image_draws_in_this_folder):
+            for image, imagedraw in zip(image_objects_in_this_folder, image_draws_in_this_folder):
                 add_one(list_of_sizes)
                 text = ""
                 for count, n_files in list_of_sizes:
                     text += f"{count}/{n_files}\n"
-                font = ImageFont.truetype(r"RobotoFont\Roboto-Black.ttf", 20)
+                font = ImageFont.truetype(os.path.join(PYTHON_FILE_PATH, "RobotoFont", "Roboto-Black.ttf"), 20)
                 bounding_box_of_text = imagedraw.multiline_textbbox(xy=(0, 0), text=text, font=font)
                 imagedraw.rectangle(xy=bounding_box_of_text, fill=(255, 255, 255, 10))
                 imagedraw.multiline_text(xy=TEXT_POS, text=text, fill=(0, 0, 0), font=font)
@@ -74,14 +75,15 @@ def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileW
                 pdf_file = PdfFileReader(filename)
                 pdf_writer.addPage(pdf_file.getPage(0))
                 # pdf_writer.appendPagesFromReader(pdf_file)
-        else:
-            start_page_number += len(images_in_this_folder)
+    start_page_number += len(image_objects_in_this_folder)
         
     list_of_sizes.pop()
 
     for folder in dir_object.get_folders():
-        make_pdf_and_add_bookmarks(folder, pdf_writer=pdf_writer, image_exts=image_exts, list_of_sizes=list_of_sizes, parent_dir=CUR_DIR_PATH, parent_bookmark=parent_bookmark, start_page_number=list_of_sizes[0][0], make_pdf=make_pdf)
+        start_page_number += make_pdf_and_add_bookmarks(folder, pdf_writer=pdf_writer, image_exts=image_exts, list_of_sizes=list_of_sizes, parent_dir=CUR_DIR_PATH, parent_bookmark=parent_bookmark, start_page_number=start_page_number, make_pdf=make_pdf)
     list_of_sizes.pop()
+
+    return len(image_objects_in_this_folder)
 
 
 

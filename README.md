@@ -24,3 +24,7 @@ python -m move_scr.py
 # Make PDF
 python -m create_pdf.py
 ```
+
+# Environment variables
+In the folder where code is stored, make a `.env`
+- SCREENSHOT_DIR=*Address of the folder when screenshots are stored*

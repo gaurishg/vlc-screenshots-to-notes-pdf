@@ -1,27 +1,36 @@
 from PIL import Image, ImageDraw, ImageFont
-import os, shutil, glob
+import os, shutil
 import time
-from create_dir_tree import DirectoryObject, FileOrFolder, create_directory_tree
-from move_scr import DONE, BASE_DIR_PATH, PIC_EXTENSION_WITH_DOT
+from create_dir_tree import DirectoryObject, create_directory_tree
+from move_scr import DONE, BASE_DIR_PATH
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from PyPDF2.generic import Bookmark
 
 FONT_HEIGHT = 10
 FONT_WIDTH = 10
-IMAGE_EXTENSIONS = [".jpg"]
+IMAGE_EXTENSIONS = [".jpg", ".png"]
 TEXT_POS = (0, 0)
 TEMP_FOLDER = os.path.join(BASE_DIR_PATH, "temp")
 PYTHON_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 
-def add_one(counter_list: list[list[int, int]]):
+
+def add_one(counter_list: list[tuple[int, int]]):
     """
         Increment counter by one at every place
     """
     for index in range(len(counter_list)):
-        counter_list[index][0] += 1
+        counter_list[index] = (counter_list[index][0] + 1, counter_list[index][1])
 
 
-def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileWriter, image_exts: list[str] = None, list_of_sizes: list[list[int, int]] = None, parent_dir: str = None, parent_bookmark: Bookmark=None, make_pdf:bool = True, start_page_number: int=0) -> int:
+def make_pdf_and_add_bookmarks(
+        dir_object: DirectoryObject, 
+        pdf_writer: PdfFileWriter, 
+        image_exts: list[str] | None = None, 
+        list_of_sizes: list[tuple[int, int]] | None = None, 
+        parent_dir: str | None = None, 
+        parent_bookmark: Bookmark | None = None, 
+        make_pdf:bool = True, 
+        start_page_number: int=0) -> int:
     """
         Modifies all images in place and adds the text regarding page numbers
         make_pdf = True if you want to make pdf and False if pdf is already there and you just wanted to add bookmarks to it
@@ -39,25 +48,25 @@ def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileW
         return 0
 
     if not make_pdf:
-        parent_bookmark = pdf_writer.addBookmark(title=dir_object.name(), pagenum=start_page_number, parent=parent_bookmark)
+        parent_bookmark = pdf_writer.addBookmark(title=dir_object.name(), pagenum=start_page_number, parent=parent_bookmark) # type: ignore
 
     CUR_DIR_PATH = os.path.join(parent_dir, dir_object.name())
     
     total_number_of_photos = dir_object.get_number_of_files(file_extension=image_exts)
-    list_of_sizes.append([0, total_number_of_photos])
+    list_of_sizes.append((0, total_number_of_photos))
 
     number_of_photos_in_this_folder = dir_object.get_number_of_files(level=0, file_extension=image_exts)
-    list_of_sizes.append([0, number_of_photos_in_this_folder])
+    list_of_sizes.append((0, number_of_photos_in_this_folder))
 
-    image_objects_in_this_folder = [im for im in dir_object.get_files() if any([im.name().lower().endswith(ext.lower()) for ext in image_exts])]
+    image_objects_in_this_folder: list[Image.Image] = []
+    dir_objects_in_this_folder = [im for im in dir_object.get_files() if any([im.name().lower().endswith(ext.lower()) for ext in image_exts])]
     if image_objects_in_this_folder:
         # Line below should have worked but it was throwing error
         # images_in_this_folder = [Image.open(os.path.join(CUR_DIR_PATH, im.name()) for im in images_in_this_folder)]
         if make_pdf:
-            for index in range(len(image_objects_in_this_folder)):
-                im = image_objects_in_this_folder[index]
-                img_path = os.path.join(CUR_DIR_PATH, im.name())
-                image_objects_in_this_folder[index] = Image.open(img_path)
+            for dir_obj in dir_objects_in_this_folder:
+                img_path = os.path.join(CUR_DIR_PATH, dir_obj.name())
+                image_objects_in_this_folder.append(Image.open(img_path))
             
             image_draws_in_this_folder = [ImageDraw.Draw(im) for im in image_objects_in_this_folder]
 
@@ -86,8 +95,7 @@ def make_pdf_and_add_bookmarks(dir_object: DirectoryObject, pdf_writer: PdfFileW
     return len(image_objects_in_this_folder)
 
 
-
-if __name__ == '__main__':
+def main():
     if os.path.exists(TEMP_FOLDER):
         shutil.rmtree(TEMP_FOLDER)
     os.makedirs(TEMP_FOLDER)
@@ -110,8 +118,12 @@ if __name__ == '__main__':
     parent_dir=None, parent_bookmark=None, make_pdf=False, start_page_number=0)
 
     with open(TEMP_PDF_NAME, "wb") as f_handle:
-        pdf_writer.write(f_handle)
+        pdf_writer.write(f_handle) # type: ignore
 
     if os.path.exists(TEMP_FOLDER):
         shutil.rmtree(TEMP_FOLDER)
+
+
+if __name__ == '__main__':
+    main()
     

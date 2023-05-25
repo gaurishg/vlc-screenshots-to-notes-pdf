@@ -1,6 +1,7 @@
-Done
+Done/
 *.mp4
-.vscode
 *.pyc
-__pycache__
+__pycache__/
 *.pdf
+.env
+venv/

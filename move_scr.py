@@ -1,16 +1,17 @@
 # Import os module to list files
 import os
-# high level path manipulations and globbing
-from pathlib import Path, PurePath
 import shutil
 import glob
-from create_dir_tree import create_directory_tree, DirectoryObject, FileOrFolder
+from typing import Callable
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 DONE = "Done" # Name of the folder where videos go after you have watched them
-SCREENSHOT_DIR = r"D:\Pictures" # Base directory where screenshots are saved
+SCREENSHOT_DIR = os.environ['SCREENSHOT_DIR'] # Base directory where screenshots are saved
 PREFIX_OF_SCREENSHOTS = 'vlcsnap' # Prefix of screenshots
-PIC_EXTENSION_WITH_DOT = '.jpg' # picture file extension
+PIC_EXTENSIONS_WITH_DOT = ['.jpg', '.png'] # picture file extension
 VID_EXTENSION_WITH_DOT = ".mp4"
 BASE_DIR_PATH = os.path.abspath('.')
 
@@ -20,11 +21,13 @@ def ignore_folder(x: str) -> bool:
 
 
 def get_list_of_all_snapshots():
-    l = glob.glob(f"{SCREENSHOT_DIR}/{PREFIX_OF_SCREENSHOTS}*{PIC_EXTENSION_WITH_DOT}")
+    l: list[str] = []
+    for ext in PIC_EXTENSIONS_WITH_DOT:
+        l += glob.glob(f"{SCREENSHOT_DIR}/{PREFIX_OF_SCREENSHOTS}*{ext}")
     return l
 
 
-def get_path_of_first_video(vid_ext: str = VID_EXTENSION_WITH_DOT, ignore_func=ignore_folder) -> str | None:
+def get_path_of_first_video(vid_ext: str = VID_EXTENSION_WITH_DOT, ignore_func: Callable[[str], bool]=ignore_folder) -> str | None:
     """
         Check all folders other than those are ignored and find the first video to be moved
     """
@@ -40,8 +43,7 @@ def make_new_path_for_video(old_path_without_video_name: str, base_dir: str=BASE
     return os.path.join(DONE, folder)
 
 
-
-if __name__ == '__main__':
+def main():
     """
     1. Save video path into a variable
     2. Check if 'Done' Folder is in current folder or not
@@ -96,3 +98,8 @@ if __name__ == '__main__':
     # Move screenshots into the folder
     for screenshot in get_list_of_all_snapshots():
         shutil.move(screenshot, '.')
+
+
+
+if __name__ == '__main__':
+   main()

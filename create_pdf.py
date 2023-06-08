@@ -3,7 +3,7 @@ import os, shutil
 import time
 from create_dir_tree import DirectoryObject, create_directory_tree
 from move_scr import DONE, BASE_DIR_PATH
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfReader, PdfWriter
 from PyPDF2.generic import Bookmark
 
 FONT_HEIGHT = 10
@@ -24,7 +24,7 @@ def add_one(counter_list: list[tuple[int, int]]):
 
 def make_pdf_and_add_bookmarks(
         dir_object: DirectoryObject, 
-        pdf_writer: PdfFileWriter, 
+        pdf_writer: PdfWriter, 
         image_exts: list[str] | None = None, 
         list_of_sizes: list[tuple[int, int]] | None = None, 
         parent_dir: str | None = None, 
@@ -48,7 +48,7 @@ def make_pdf_and_add_bookmarks(
         return 0
 
     if not make_pdf:
-        parent_bookmark = pdf_writer.addBookmark(title=dir_object.name(), pagenum=start_page_number, parent=parent_bookmark) # type: ignore
+        parent_bookmark = pdf_writer.add_outline_item(title=dir_object.name(), page_number=start_page_number, parent=parent_bookmark)
 
     CUR_DIR_PATH = os.path.join(parent_dir, dir_object.name())
     
@@ -60,7 +60,7 @@ def make_pdf_and_add_bookmarks(
 
     image_objects_in_this_folder: list[Image.Image] = []
     dir_objects_in_this_folder = [im for im in dir_object.get_files() if any([im.name().lower().endswith(ext.lower()) for ext in image_exts])]
-    if image_objects_in_this_folder:
+    if dir_objects_in_this_folder:
         # Line below should have worked but it was throwing error
         # images_in_this_folder = [Image.open(os.path.join(CUR_DIR_PATH, im.name()) for im in images_in_this_folder)]
         if make_pdf:
@@ -81,8 +81,8 @@ def make_pdf_and_add_bookmarks(
                 imagedraw.multiline_text(xy=TEXT_POS, text=text, fill=(0, 0, 0), font=font)
                 filename = os.path.join(TEMP_FOLDER, f"{list_of_sizes[0][0]}.pdf")
                 image.save(filename, "PDF")
-                pdf_file = PdfFileReader(filename)
-                pdf_writer.addPage(pdf_file.getPage(0))
+                pdf_file = PdfReader(filename)
+                pdf_writer.add_page(pdf_file.pages[0])
                 # pdf_writer.appendPagesFromReader(pdf_file)
     start_page_number += len(image_objects_in_this_folder)
         
@@ -107,7 +107,7 @@ def main():
 
     TEMP_PDF_NAME = f'output-{time.strftime("%Y%m%d%H%M%S")}.pdf'
     print("Pdf filename", TEMP_PDF_NAME)
-    pdf_writer = PdfFileWriter()
+    pdf_writer = PdfWriter()
 
     # First create the PDF with the page numbers
     make_pdf_and_add_bookmarks(dir_object=IMAGE_DIR_TREE, pdf_writer=pdf_writer, image_exts=IMAGE_EXTENSIONS, list_of_sizes=None,

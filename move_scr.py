@@ -53,7 +53,6 @@ def main():
     6. move all screenshots to this folder
     7. move video here too
     """
-    print(get_list_of_all_snapshots())
 
     # Get list of videos
     video_name_with_extension = get_path_of_first_video(vid_ext=VID_EXTENSION_WITH_DOT)
@@ -70,7 +69,7 @@ def main():
         video_name_with_extension = os.path.basename(video_name_with_extension)
         video_name_without_extension = os.path.splitext(video_name_with_extension)[0]
 
-    print(video_name_with_extension)
+    print(f"Found {video_name_with_extension}")
 
     folder_to_move_in = make_new_path_for_video(video_path)
 
@@ -96,8 +95,10 @@ def main():
     shutil.move(os.path.join(video_path, video_name_with_extension), '.')
 
     # Move screenshots into the folder
-    for screenshot in get_list_of_all_snapshots():
+    all_vlc_snaps = get_list_of_all_snapshots()
+    for screenshot in all_vlc_snaps:
         shutil.move(screenshot, '.')
+    print(f"Moved total {len(all_vlc_snaps)} screenshots to {os.path.abspath(os.getcwd())}")
 
 
 
